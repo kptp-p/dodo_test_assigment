@@ -1,6 +1,9 @@
 import cv2
 from ultralytics import YOLO
 
+RED = (0, 0, 255)
+GREEN = (0, 255, 0)
+
 
 def select_roi_with_mouse(video):
     _, frame = video.read()
@@ -13,10 +16,10 @@ def detect_people_in_roa(results):
     for result in results:
         if 0 in result.boxes.cls:
             return True
-        return False
+    return False
 
 
-def open_video(path: str):
+def main(path: str):
     model = YOLO("yolo26n.pt")
     video = cv2.VideoCapture(path)
 
@@ -29,7 +32,13 @@ def open_video(path: str):
     pervious_state: bool = False
     stable_state: bool = False
     counter = 0
-    current_color = (0, 0, 255)
+    current_color = RED
+
+    _, frame = video.read()
+    if detect_people_in_roa(model.predict(frame[y:y+h, x:x+w])):
+        stable_state = True
+        current_state = True
+        pervious_state = True
 
     while video.isOpened():
         ret, frame = video.read()
@@ -43,23 +52,20 @@ def open_video(path: str):
         results = model.predict(roi_frame)
         pervious_state = current_state
 
-        if detect_people_in_roa(results):
-            current_state = True
-        else:
-            current_state = False
+        current_state = detect_people_in_roa(results)
 
         if current_state == pervious_state:
             counter += 1
         else:
-            counter = 0
+            counter = 1
 
         if counter >= 10:
             stable_state = current_state
 
         if stable_state:
-            current_color = (0, 255, 0)
-        elif not stable_state:
-            current_color = (0, 0, 255)
+            current_color = GREEN
+        else:
+            current_color = RED
 
         cv2.rectangle(frame, (x, y), (x+w, y+h), current_color, 2)
         cv2.imshow("Orig", frame)
@@ -71,4 +77,5 @@ def open_video(path: str):
     cv2.destroyAllWindows()
 
 
-open_video("1.mp4")
+if __name__ == "__main__":
+    main("1.mp4")
