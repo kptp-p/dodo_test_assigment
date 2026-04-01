@@ -3,6 +3,8 @@ from ultralytics import YOLO
 
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
+LEFT = 'Свободный стол'
+APPROACH = 'Стол занят'
 
 
 def select_roi_with_mouse(video):
@@ -31,8 +33,11 @@ def main(path: str):
     current_state: bool = False
     pervious_state: bool = False
     stable_state: bool = False
+    pervious_stable_state: bool = False
     counter = 0
     current_color = RED
+
+    events: list[tuple] = []
 
     _, frame = video.read()
     if detect_people_in_roa(model.predict(frame[y:y+h, x:x+w])):
@@ -59,7 +64,7 @@ def main(path: str):
         else:
             counter = 1
 
-        if counter >= 10:
+        if counter >= 30:
             stable_state = current_state
 
         if stable_state:
@@ -67,9 +72,17 @@ def main(path: str):
         else:
             current_color = RED
 
+        if stable_state != pervious_stable_state:
+            pervious_stable_state = stable_state
+            timemark = video.get(cv2.CAP_PROP_POS_MSEC)
+            if stable_state:
+                events.append((APPROACH, timemark))
+            else:
+                events.append((LEFT, timemark))
+
         cv2.rectangle(frame, (x, y), (x+w, y+h), current_color, 2)
         cv2.imshow("Orig", frame)
-
+        print(events)
         if cv2.waitKey(1) == ord('q'):
             break
 
