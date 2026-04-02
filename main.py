@@ -97,7 +97,7 @@ def main(path: str):
         else:
             counter = 1
 
-        if counter >= 30:
+        if counter >= 10:
             stable_state = current_state
 
         if not stable_state:
@@ -107,7 +107,7 @@ def main(path: str):
         else:
             sit_counter += 1
 
-            if sit_counter >= fps * 10:
+            if sit_counter >= fps * 5:
                 current_color = RED
                 current_label = OCCUPIED
             else:
@@ -122,7 +122,7 @@ def main(path: str):
             else:
                 events.append((EMPTY, timemark))
 
-        if stable_state and sit_counter == int(fps * 20):
+        if stable_state and sit_counter == int(fps * 5):
             timemark = video.get(cv2.CAP_PROP_POS_MSEC) / 1000
             events.append((OCCUPIED, timemark))
 
@@ -139,7 +139,7 @@ def main(path: str):
     cv2.destroyAllWindows()
     df = convert_eventlist_to_dataframe(events)
     print(df)
-    print(calculating_delay(df))
+    print(f'Среднее время между уходом гостя и подходом следующего человека {int(calculating_delay(df))} секунд')
 
 
 if __name__ == "__main__":
